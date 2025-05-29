@@ -7,7 +7,93 @@ alwaysApply: true
 # 项目通用开发规范
 
 ## 1. 项目结构规范
-
+```
+oneboard/
+├── public/                  # 静态资源
+│   ├── favicon.ico
+│   ├── robots.txt
+│   └── assets/              # 构建时直接复制的静态资源
+│       └── images/          # 全局图片资源
+├── src/
+│   ├── assets/              # 需要处理的静态资源
+│   │   ├── fonts/           # 字体文件
+│   │   ├── svg/             # SVG图标
+│   │   └── scss/            # 全局SCSS变量/混入
+│   ├── components/          # 组件
+│   │   ├── ui/              # 基础UI组件
+│   │   │   ├── Button.vue
+│   │   │   ├── Input.vue
+│   │   │   └── ...
+│   │   └── shared/          # 业务公共组件
+│   ├── composables/         # 组合式函数
+│   │   ├── useFetch.js
+│   │   └── ...
+│   ├── layouts/             # 布局组件
+│   │   ├── DefaultLayout.vue
+│   │   └── AuthLayout.vue
+│   ├── pages/               # 路由页面
+│   │   ├── Home.vue
+│   │   ├── auth/
+│   │   │   ├── Login.vue
+│   │   │   └── Register.vue
+│   │   └── ...
+│   ├── router/              # 路由配置
+│   │   ├── index.js
+│   │   └── routes.js
+│   ├── stores/              # Pinia状态管理
+│   │   ├── index.js         # Pinia初始化
+│   │   ├── userStore.js     # 用户状态
+│   │   └── ...
+│   ├── styles/              # 全局样式
+│   │   ├── base.css         # 重置样式
+│   │   ├── tailwind.css     # Tailwind入口
+│   │   └── variables.scss   # SCSS变量
+│   ├── utils/               # 工具函数
+│   │   ├── auth.js
+│   │   ├── helpers.js
+│   │   └── ...
+│   ├── App.vue              # 根组件
+│   └── main.js              # 应用入口
+├── docs/                    # 项目文档
+│   ├── design/         # 设计文档
+│   ├── architecture/        
+│   │   ├── system-design.md
+│   │   └── adr/             # 架构决策记录
+│   ├── api/
+│   │   ├── rest-api.md
+│   │   └── graphql/
+│   ├── guidelines/
+│   │   ├── frontend.md
+│   │   ├── git-workflow.md
+│   │   └── coding-style.md
+│   ├── changelog/
+│   │   ├── CHANGELOG.md
+│   │   └── releases/
+│   └── README.md            # 文档首页
+├── tests/                   # 测试
+│   ├── unit/                # 单元测试
+│   │   ├── components/
+│   │   ├── stores/
+│   │   └── ...
+│   ├── e2e/                 # 端到端测试
+│   │   ├── auth.spec.js
+│   │   └── ...
+│   └── fixtures/            # 测试数据
+├── scripts/                 # 脚本
+│   ├── build/               # 构建相关
+│   ├── deploy/              # 部署相关
+│   └── generate/            # 代码生成
+├── .env                     # 环境变量
+├── .env.development
+├── .env.production
+├── .gitignore
+├── README.md                # 项目说明
+├── vite.config.js           # Vite配置
+├── tailwind.config.js       # Tailwind配置
+├── postcss.config.js
+├── package.json
+└── package-lock.json
+```
 
 ## 2. 代码规范
 
@@ -26,7 +112,7 @@ alwaysApply: true
 - 修复分支命名：`fix/<模块名>-<简述>`
 
 ### 5.2 提交规范
-- 使用 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/) 风格
+- 使用 [Conventional Commits](mdc:https:/www.conventionalcommits.org/zh-hans) 风格
 - 描述部分总是使用中文
 
 ## 6. 测试规范
