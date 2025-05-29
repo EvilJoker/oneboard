@@ -1,0 +1,34 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# 项目通用开发规范
+
+## 1. 项目结构规范
+
+
+## 2. 代码规范
+
+
+## 3. 文档规范
+
+
+## 4. 开发环境规范
+
+
+## 5. 版本控制规范
+### 5.1 分支规范
+- 主分支：`main`
+- 开发分支：`dev`
+- 功能分支命名：`feature/<模块名>-<简述>`
+- 修复分支命名：`fix/<模块名>-<简述>`
+
+### 5.2 提交规范
+- 使用 [Conventional Commits](https://www.conventionalcommits.org/zh-hans/) 风格
+- 描述部分总是使用中文
+
+## 6. 测试规范
+
+## 7. 安全规范
