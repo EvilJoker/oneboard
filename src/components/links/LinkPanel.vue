@@ -1,10 +1,68 @@
 <template>
-  <!-- 
-    链接面板主组件模板
-    - 网格布局展示链接项
-    - 添加新链接按钮
-    - 加载和错误状态处理
-  -->
+  <div class="link-panel" data-testid="link-panel">
+    <!-- 面板头部 -->
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold text-gray-900">{{ title }}</h2>
+      <button
+        v-if="allowAdd"
+        @click="handleAddLink"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        data-testid="add-link-button"
+      >
+        + 添加链接
+      </button>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="flex justify-center py-12" data-testid="loading">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- 错误状态 -->
+    <div v-else-if="error" class="text-center py-12" data-testid="error">
+      <div class="text-red-600 mb-4">{{ error }}</div>
+      <button
+        @click="initializeLinks"
+        class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+      >
+        重试
+      </button>
+    </div>
+
+    <!-- 链接网格 -->
+    <div v-else-if="links.length > 0" :class="getGridClass()" class="gap-4" data-testid="links-grid">
+      <LinkItem
+        v-for="link in links"
+        :key="link.id"
+        :link="link"
+        :show-delete="allowDelete"
+        @click="handleLinkClick"
+        @edit="handleEditLink"
+        @delete="handleDeleteLink"
+      />
+    </div>
+
+    <!-- 空状态 -->
+    <div v-else class="text-center py-12" data-testid="empty-state">
+      <div class="text-gray-500 mb-4">还没有添加任何链接</div>
+      <button
+        v-if="allowAdd"
+        @click="handleAddLink"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      >
+        添加第一个链接
+      </button>
+    </div>
+
+    <!-- 链接表单 -->
+    <LinkForm
+      v-if="showForm"
+      :visible="showForm"
+      :link="editingLink"
+      @submit="handleFormSubmit"
+      @cancel="handleFormCancel"
+    />
+  </div>
 </template>
 
 <script setup>
@@ -122,14 +180,16 @@ const deletingLinkId = ref(null)
  * @param {Object} link - 被点击的链接对象
  */
 const handleLinkClick = (link) => {
-  // 接口定义：打开链接并触发事件
+  window.open(link.url, '_blank')
+  emit('link-click', link)
 }
 
 /**
  * 处理添加链接
  */
 const handleAddLink = () => {
-  // 接口定义：显示添加表单
+  editingLink.value = null
+  showForm.value = true
 }
 
 /**
@@ -137,23 +197,23 @@ const handleAddLink = () => {
  * @param {Object} link - 要编辑的链接对象
  */
 const handleEditLink = (link) => {
-  // 接口定义：显示编辑表单并填充数据
+  editingLink.value = { ...link }
+  showForm.value = true
 }
 
 /**
  * 处理删除链接
  * @param {string} linkId - 要删除的链接ID
  */
-const handleDeleteLink = (linkId) => {
-  // 接口定义：显示删除确认对话框
-}
-
-/**
- * 确认删除链接
- * @param {string} linkId - 要删除的链接ID
- */
-const confirmDeleteLink = async (linkId) => {
-  // 接口定义：执行删除操作并处理结果
+const handleDeleteLink = async (linkId) => {
+  if (confirm('确定要删除这个链接吗？')) {
+    try {
+      await removeLink(linkId)
+      emit('link-deleted', linkId)
+    } catch (err) {
+      emit('error', err)
+    }
+  }
 }
 
 /**
@@ -161,14 +221,26 @@ const confirmDeleteLink = async (linkId) => {
  * @param {Object} linkData - 表单数据
  */
 const handleFormSubmit = async (linkData) => {
-  // 接口定义：根据编辑模式调用添加或更新方法
+  try {
+    if (editingLink.value) {
+      await updateLink(editingLink.value.id, linkData)
+    } else {
+      await addLink(linkData)
+      emit('link-added', linkData)
+    }
+    showForm.value = false
+    editingLink.value = null
+  } catch (err) {
+    emit('error', err)
+  }
 }
 
 /**
  * 处理表单取消
  */
 const handleFormCancel = () => {
-  // 接口定义：隐藏表单并重置状态
+  showForm.value = false
+  editingLink.value = null
 }
 
 /**
@@ -176,7 +248,15 @@ const handleFormCancel = () => {
  * @returns {string} Tailwind CSS 网格类名
  */
 const getGridClass = () => {
-  // 接口定义：根据 columnsPerRow 返回对应的网格类
+  const gridClasses = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-1 md:grid-cols-2',
+    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+    4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',
+    5: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
+    6: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6'
+  }
+  return `grid ${gridClasses[props.columnsPerRow] || gridClasses[3]}`
 }
 
 /**
@@ -191,7 +271,11 @@ const handleError = (err) => {
  * 组件挂载时初始化
  */
 onMounted(async () => {
-  // 接口定义：初始化链接数据
+  try {
+    await initializeLinks()
+  } catch (err) {
+    emit('error', err)
+  }
 })
 </script>
 
@@ -203,4 +287,7 @@ onMounted(async () => {
   - 响应式断点
   - 加载状态样式
 */
+.link-panel {
+  @apply w-full;
+}
 </style> 
