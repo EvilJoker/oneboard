@@ -3,128 +3,353 @@ description:
 globs: 
 alwaysApply: true
 ---
+# OneBoard 项目通用开发规范
 
-# 项目通用开发规范
-代码开发应该符合通用规范，评审代码或者推荐、生成代码时，应该符合改规范。并指出存在的不合理地方
+> 本规范是项目开发的核心约束，所有代码开发、评审、生成都必须严格遵循。违反规范的代码将被拒绝。
 
-## 1. 项目结构规范
+## 🏗️ 1. 项目结构规范（强制约束）
+
+### 1.1 标准目录结构
 ```
 oneboard/
-├── public/                  # 静态资源
+├── public/                  # 静态资源（构建时直接复制）
 │   ├── favicon.ico
-│   ├── robots.txt
-│   └── assets/              # 构建时直接复制的静态资源
-│       └── images/          # 全局图片资源
+│   └── assets/              # 图片、字体等静态文件
 ├── src/
+│   ├── components/          # Vue 组件
+│   │   ├── ui/              # 基础 UI 组件（可复用）
+│   ├── composables/         # 组合式函数（use* 命名）
+│   ├── constants/           # 常量定义
+│   │   └── *.js             # 其他常量
+│   ├── utils/               # 纯函数工具
+│   │   └── helpers.js       # 通用工具函数
+│   ├── stores/              # Pinia 状态管理（如需要）
 │   ├── assets/              # 需要处理的静态资源
-│   │   ├── fonts/           # 字体文件
-│   │   ├── svg/             # SVG图标
-│   │   └── scss/            # 全局SCSS变量/混入
-│   ├── components/          # 组件
-│   │   ├── ui/              # 基础UI组件
-│   │   │   ├── Button.vue
-│   │   │   ├── Input.vue
-│   │   │   └── ...
-│   │   └── shared/          # 业务公共组件
-│   ├── composables/         # 组合式函数
-│   │   ├── useFetch.js
-│   │   └── ...
-│   ├── layouts/             # 布局组件
-│   │   ├── DefaultLayout.vue
-│   │   └── AuthLayout.vue
-│   ├── pages/               # 路由页面
-│   │   ├── Home.vue
-│   │   ├── auth/
-│   │   │   ├── Login.vue
-│   │   │   └── Register.vue
-│   │   └── ...
-│   ├── router/              # 路由配置
-│   │   ├── index.js
-│   │   └── routes.js
-│   ├── stores/              # Pinia状态管理
-│   │   ├── index.js         # Pinia初始化
-│   │   ├── userStore.js     # 用户状态
-│   │   └── ...
 │   ├── styles/              # 全局样式
-│   │   ├── base.css         # 重置样式
-│   │   ├── tailwind.css     # Tailwind入口
-│   │   └── variables.scss   # SCSS变量
-│   ├── utils/               # 工具函数
-│   │   ├── auth.js
-│   │   ├── helpers.js
-│   │   └── ...
 │   ├── App.vue              # 根组件
 │   └── main.js              # 应用入口
-├── docs/                    # 项目文档
-│   ├── design/         # 设计文档
-│   ├── architecture/        
-│   │   ├── system-design.md
-│   │   └── adr/             # 架构决策记录
-│   ├── api/
-│   │   ├── rest-api.md
-│   │   └── graphql/
-│   ├── guidelines/
-│   │   ├── frontend.md
-│   │   ├── git-workflow.md
-│   │   └── coding-style.md
-│   ├── changelog/
-│   │   ├── CHANGELOG.md
-│   │   └── releases/
-│   └── README.md            # 文档首页
-├── tests/                   # 测试
+├── tests/                   # 测试文件
+│   ├── setup.js             # 测试环境配置
+│   ├── utils/               # 测试工具函数
+│   │   └── testHelpers.js
 │   ├── unit/                # 单元测试
-│   │   ├── components/
-│   │   ├── stores/
-│   │   └── ...
-│   ├── e2e/                 # 端到端测试
-│   │   ├── auth.spec.js
-│   │   └── ...
-│   └── fixtures/            # 测试数据
-├── scripts/                 # 脚本
-│   ├── build/               # 构建相关
-│   ├── deploy/              # 部署相关
-│   └── generate/            # 代码生成
-├── .env                     # 环境变量
-├── .env.development
-├── .env.production
-├── .gitignore
-├── README.md                # 项目说明
-├── vite.config.js           # Vite配置
-├── tailwind.config.js       # Tailwind配置
-├── postcss.config.js
-├── package.json
-└── package-lock.json
+│   │   ├── components/      # 组件测试
+│   │   └── composables/     # 组合式函数测试
+│   └── e2e/                 # 端到端测试（预留）
+├── docs/                    # 项目文档
+│   ├── design/              # 设计文档
+│   │   └── 00架构设计文档.md # 核心架构文档
+│   ├── testing.md           # 测试指南
+│   └── testing-best-practices.md # 测试最佳实践
+├── scripts/                 # 项目脚本
+│   └── test.sh              # 测试执行脚本
+├── .cursor/                 # Cursor 编辑器规则
+│   └── rules/               # 开发规范文件
+├── 配置文件
+│   ├── vite.config.js       # Vite 构建配置
+│   ├── vitest.config.js     # 测试配置
+│   ├── tailwind.config.js   # Tailwind CSS 配置
+│   ├── postcss.config.js    # PostCSS 配置
+│   ├── package.json         # 项目依赖
+│   └── .gitignore           # Git 忽略规则
 ```
 
-## 2. 代码规范
+### 1.2 目录命名约束
+- **组件目录**: 使用 kebab-case（如 `link-form`）
+- **文件命名**: Vue 组件使用 PascalCase（如 `LinkForm.vue`）
+- **JS 文件**: 使用 camelCase（如 `useStorage.js`）
+- **常量文件**: 使用 camelCase（如 `defaultLinks.js`）
 
+## 📝 2. 代码规范（强制约束）
 
-## 3. 文档规范
+### 2.1 Vue 组件规范
+```vue
+<!-- ✅ 正确的组件结构 -->
+<template>
+  <!-- 使用 data-testid 用于测试 -->
+  <div class="component-root" data-testid="component-name">
+    <!-- Tailwind CSS 类名 -->
+    <button 
+      class="px-4 py-2 bg-blue-500 text-white rounded"
+      @click="handleClick"
+      data-testid="submit-button"
+    >
+      {{ buttonText }}
+    </button>
+  </div>
+</template>
 
-### 3.1 整体架构设计
+<script setup>
+// 1. 导入语句
+import { ref, computed } from 'vue'
+import { useStorage } from '@/composables/useStorage'
 
-架构设计文档 体现了项目的总体设计 [00架构设计文档.md](mdc:docs/design/00架构设计文档.md)
+// 2. Props 定义（必须包含验证）
+const props = defineProps({
+   type: String,
+    required: true,
+    validator: (value) => value.length > 0
+  },
+  disabled: {
+    type: Boolean,
+    default: false
+  }
+})
 
-### 3.2 功能设计文档
+// 3. Emits 定义
+const emit = defineEmits(['submit'合式函数
+const { read, write } = useStorage()
 
-子功能的设计，应该符合整体架构设计。是局部功能的详细描述。
+// 5. 响应式数据
+const isLoading = ref(false)
 
+// 6. 计算属性
+const buttonText = computed(() => 
+  isLoading.value ? '加载中...' : props.title
+)
 
+// 7. 方法定义
+const handleClick = () => {
+  emit('submit', { data: 'example' })
+}
+</script>
 
-## 4. 开发环境规范
+<style scoped>
+/* 优先使用 Tailwind CSS，必要时使用 scoped 样式 */
+.component-root {
+  /* 自定义样式 */
+}
+</style>
+```
 
+### 2.2 组合式函数规范
+```javascript
+// ✅ 正确的组合式函数结构
+import { ref, computed } from 'vue'
 
-## 5. 版本控制规范
-### 5.1 分支规范
-- 主分支：`main`
-- 开发分支：`dev`
-- 功能分支命名：`feature/<模块名>-<简述>`
-- 修复分支命名：`fix/<模块名>-<简述>`
+/**
+ * 链接管理组合式函数
+ * @returns {Object} 链接管理相关的状态和方法
+ */
+export function useLinks() {
+  // 1. 响应式状态
+  const links = ref([])
+  const isLoading = ref(false)
+  const error = ref(null)
 
-### 5.2 提交规范
-- 使用 [Conventional Commits](mdc:https:/www.conventionalcommits.org/zh-hans) 风格
-- 描述部分总是使用中文
+  // 2. 计算属性
+  const linkCount = computed(() => links.value.length)
 
-## 6. 测试规范
+  // 3. 方法定义
+  const addLink = async (link) => {
+    try {
+      isLoading.value = true
+      // 业务逻辑
+      links.value.push(link)
+    } catch (err) {
+      error.value = err.message
+    } finally {
+      isLoading.value = false
+    }
+  }
 
-## 7. 安全规范
+  // 4. 返回公共接口
+  return {
+    // 状态
+    links: readonly(links),
+    isLoading: readonly(isLoading),
+    error: readonly(error),
+    
+    // 计算属性
+    linkCount,
+    
+    // 方法
+    addLink
+  }
+}
+```
+
+### 2.3 命名约定（强制）
+- **组件名**: PascalCase，描述性（`LinkForm`, `LinkItem`）
+- **组合式函数**: use + PascalCase（`useStorage`, `useLinks`）
+- **变量名**: camelCase（`isLoading`, `linkData`）
+- **常量**: UPPER_SNAKE_CASE（`DEFAULT_LINKS`, `API_BASE_URL`）
+- **事件名**: kebab-case（`link-added`, `form-submitted`）
+
+## 🧪 3. 测试规范（强制约束）
+
+### 3.1 测试覆盖率要求
+- **最低覆盖率**: 95%
+- **组件测试**: 必须测试 props、events、渲染
+- **组合式函数**: 必须测试所有公共方法
+- **错误处理**: 必须测试异常情况
+
+### 3.2 测试文件命名
+```
+tests/
+├── unit/
+│   ├── components/
+│   │   ├── LinkForm.test.js      # 对应 src/components/links/LinkForm.vue
+│   │   └── LinkItem.test.js      # 对应 src/components/links/LinkItem.vue
+│   └── composables/
+│       ├── useStorage.test.js    # 对应 src/composables/useStorage.js
+│       └── useLinks.test.js      # 对应 src/composables/useLinks.js
+```
+
+### 3.3 测试结构规范
+```javascript
+// ✅ 正确的测试结构
+import { describe, it, expect, beforeEach } from 'vitest'
+import { mount } from '@vue/test-utils'
+import LinkForm from '@/components/links/LinkForm.vue'
+
+describe('LinkForm', () => {
+  let wrapper
+
+  beforeEach(() => {
+    wrapper = mount(LinkForm, {
+      props: {
+        visible: true
+      }
+    })
+  })
+
+  describe('Props验证', () => {
+    it('应该正确接收 visible 属性', () => {
+      expect(wrapper.props('visible')).toBe(true)
+    })
+  })
+
+  describe('事件处理', () => {
+    it('应该在提交时触发 submit 事件', async () => {
+      // AAA 模式：Arrange, Act, Assert
+      // Arrange
+      const nameInput = wrapper.find('[data-testid="name-input"]')
+      
+      // Act
+      await nameInput.setValue('测试链接')
+      await wrapper.find('[data-testid="form"]').trigger('submit')
+      
+      // Assert
+      expect(wrapper.emitted('submit')).toBeTruthy()
+    })
+  })
+})
+```
+
+## 📚 4. 文档规范（强制约束）
+
+### 4.1 架构设计文档
+- **位置**: `docs/design/00架构设计文档.md`
+- **作用**: 项目总体设计的权威文档
+- **更新**: 任何架构变更必须先更新此文档
+
+### 4.2 功能设计文档
+- **命名**: `docs/design/[功能名]-设计文档.md`
+- **内容**: 必须包含接口定义、数据流、交互设计
+- **约束**: 必须与架构设计文档保持一致
+
+### 4.3 代码注释规范
+```javascript
+/**
+ * 链接数据存储管理
+ * @param {string} key - 存储键名
+ * @param {Object} defaultValue - 默认值
+ * @returns {Object} 包含读写方法的对象
+ * @example
+ * const { read, write } = useStorage('links', [])
+ */
+export function useStorage(key, defaultValue) {
+  // 实现代码
+}
+```
+
+## 🔧 5. 开发环境规范
+
+### 5.1 必需工具
+- **Node.js**: >= 18.0.0
+- **包管理器**: npm（统一使用，禁止混用 yarn/pnpm）
+- **编辑器**: 推荐 Cursor，必须安装项目 ESLint 配置
+
+### 5.2 开发脚本
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  }
+}
+```
+
+## 📋 6. 版本控制规范（强制约束）
+
+### 6.1 分支策略
+- **主分支**: `main`（受保护，仅通过 PR 合并）
+- **开发分支**: `dev`（日常开发）
+- **功能分支**: `feature/<模块名>-<简述>`
+- **修复分支**: `fix/<模块名>-<简述>`
+
+### 6.2 提交规范（Conventional Commits）
+```bash
+# ✅ 正确的提交格式
+feat: 新增快速链接管理功能
+fix: 修复链接表单验证问题
+docs: 更新架构设计文档
+test: 添加 useStorage 单元测试
+refactor: 重构链接数据处理逻辑
+style: 优化组件样式布局
+chore: 更新依赖包版本
+
+# ❌ 错误的提交格式
+add new feature
+bug fix
+update docs
+```
+
+### 6.3 PR 规范
+- **标题**: 使用 Conventional Commits 格式
+- **描述**: 必须包含变更说明、测试情况
+- **检查**: 必须通过所有测试和代码检查
+
+## 🛡️ 7. 质量保证（强制约束）
+
+### 7.1 代码质量检查
+- **ESLint**: 必须通过，零警告
+- **测试覆盖率**: >= 95%
+- **构建**: 必须成功，零错误
+
+### 7.2 性能要求
+无
+
+### 7.3 浏览器兼容性
+无
+
+## 🚨 8. 安全规范
+
+### 8.1 数据处理
+- **输入验证**: 所有用户输入必须验证
+- **XSS 防护**: 使用 Vue 的内置防护，避免 v-html
+- **数据存储**: localStorage 数据必须验证格式
+
+### 8.2 依赖管理
+- **定期更新**: 每月检查依赖更新
+- **安全扫描**: 使用 npm audit 检查漏洞
+- **最小权限**: 仅安装必需的依赖
+
+## ⚠️ 9. 违规处理
+
+### 9.1 代码审查
+- 违反规范的代码将被拒绝合并
+- 必须修复所有规范问题后才能重新提交
+
+### 9.2 例外情况
+- 特殊情况需要违反规范时，必须在 PR 中详细说明原因
+- 需要团队讨论并达成一致
+
+---
+
+**📌 重要提醒**: 本规范是项目质量的基础保障，所有开发者都必须严格遵循。规范的更新需要团队讨论并更新此文档。
