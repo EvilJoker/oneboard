@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useStorage } from './useStorage.js'
 import { DEFAULT_LINKS } from '../constants/defaultLinks.js'
 
@@ -26,8 +26,20 @@ export function useLinks() {
   const loading = ref(false)
   const error = ref(null)
   
-  // 存储管理
-  const storage = useStorage('quick-links', '1.0')
+  // 存储管理 - 使用新的 useStorage API
+  const { 
+    storedValue: storedLinks, 
+    save: saveToStorage, 
+    load: loadFromStorage,
+    error: storageError,
+    loading: storageLoading 
+  } = useStorage('quick-links', { links: [] }, {
+    validator: (data) => data && Array.isArray(data.links),
+    errorHandler: (err) => {
+      console.error('Links storage error:', err)
+      error.value = err.message
+    }
+  })
 
   /**
    * 初始化链接数据
@@ -38,16 +50,16 @@ export function useLinks() {
       loading.value = true
       error.value = null
       
-      // 尝试从存储读取数据
-      const storedData = storage.read()
+      // 从存储加载数据
+      const storedData = await loadFromStorage()
       
-      if (storedData && storedData.links && Array.isArray(storedData.links)) {
+      if (storedData && storedData.links && Array.isArray(storedData.links) && storedData.links.length > 0) {
         links.value = storedData.links
       } else {
-        // 如果没有存储数据或数据无效，使用默认链接
+        // 如果没有存储数据、数据无效或为空数组，使用默认链接
         links.value = [...DEFAULT_LINKS]
         // 保存默认数据到存储
-        storage.write({ links: links.value })
+        await saveToStorage({ links: links.value })
       }
     } catch (err) {
       error.value = err.message
@@ -64,7 +76,7 @@ export function useLinks() {
    * @returns {QuickLink} 添加成功的链接对象
    * @throws {Error} 验证失败或添加失败时抛出错误
    */
-  const addLink = (linkData) => {
+  const addLink = async (linkData) => {
     // 验证链接数据
     const validation = validateLink(linkData)
     if (!validation.isValid) {
@@ -88,7 +100,7 @@ export function useLinks() {
     links.value.push(newLink)
     
     // 保存到存储
-    storage.write({ links: links.value })
+    await saveToStorage({ links: links.value })
     
     return newLink
   }
@@ -98,7 +110,7 @@ export function useLinks() {
    * @param {string} linkId - 要删除的链接ID
    * @returns {boolean} 删除是否成功
    */
-  const removeLink = (linkId) => {
+  const removeLink = async (linkId) => {
     const index = links.value.findIndex(link => link.id === linkId)
     if (index === -1) {
       return false
@@ -108,7 +120,7 @@ export function useLinks() {
     links.value.splice(index, 1)
     
     // 保存到存储
-    storage.write({ links: links.value })
+    await saveToStorage({ links: links.value })
     
     return true
   }
@@ -120,7 +132,7 @@ export function useLinks() {
    * @returns {QuickLink} 更新后的链接对象
    * @throws {Error} 链接不存在或验证失败时抛出错误
    */
-  const updateLink = (linkId, updates) => {
+  const updateLink = async (linkId, updates) => {
     const index = links.value.findIndex(link => link.id === linkId)
     if (index === -1) {
       throw new Error('链接不存在')
@@ -151,7 +163,7 @@ export function useLinks() {
     }
     
     // 保存到存储
-    storage.write({ links: links.value })
+    await saveToStorage({ links: links.value })
     
     return links.value[index]
   }

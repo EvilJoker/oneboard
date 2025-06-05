@@ -10,125 +10,136 @@ import { DEFAULT_LINKS } from '../../../src/constants/defaultLinks.js'
 // Mock useStorage
 vi.mock('../../../src/composables/useStorage.js', () => ({
   useStorage: vi.fn(() => ({
-    read: vi.fn(),
-    write: vi.fn(),
-    clear: vi.fn(),
-    isVersionCompatible: vi.fn()
+    storedValue: { value: { links: [] } },
+    save: vi.fn().mockResolvedValue(true),
+    load: vi.fn().mockResolvedValue({ links: [] }),
+    error: { value: null },
+    loading: { value: false },
+    isSupported: { value: true }
   }))
 }))
 
 describe('useLinks', () => {
-  let mockStorage
+  let mockUseStorage
   
   beforeEach(async () => {
-    // do: 重置所有mock和响应式状态
+    // 重置所有mock和响应式状态
     vi.clearAllMocks()
-    mockStorage = {
-      read: vi.fn(),
-      write: vi.fn(() => true),
-      clear: vi.fn(() => true),
-      isVersionCompatible: vi.fn(() => true)
+    mockUseStorage = {
+      storedValue: { value: { links: [] } },
+      save: vi.fn().mockResolvedValue(true),
+      load: vi.fn().mockResolvedValue({ links: [] }),
+      error: { value: null },
+      loading: { value: false },
+      isSupported: { value: true }
     }
     
     const { useStorage } = await import('../../../src/composables/useStorage.js')
-    useStorage.mockReturnValue(mockStorage)
+    useStorage.mockReturnValue(mockUseStorage)
   })
 
   describe('初始化链接数据', () => {
-    it('应该在存储为空时加载默认链接', () => {
-      // do: 模拟存储为空的情况
-      mockStorage.read.mockReturnValue(null)
+    it('应该在存储为空时加载默认链接', async () => {
+      // 模拟存储为空的情况 - 返回null或undefined表示没有数据
+      mockUseStorage.load.mockResolvedValue(null)
       const { initializeLinks, links } = useLinks()
       
-      // when: 执行初始化
-      initializeLinks()
+      // 执行初始化
+      await initializeLinks()
       
-      // then: 应该加载默认链接数据
+      // 应该加载默认链接数据
       expect(links.value).toEqual(DEFAULT_LINKS)
-      expect(mockStorage.write).toHaveBeenCalledWith({ links: DEFAULT_LINKS })
+      expect(mockUseStorage.save).toHaveBeenCalledWith({ links: DEFAULT_LINKS })
     })
 
-    it('应该成功加载存储中的现有数据', () => {
-      // do: 模拟存储中有现有数据
+    it('应该成功加载存储中的现有数据', async () => {
+      // 模拟存储中有现有数据
       const existingLinks = [
         { id: 'custom1', name: 'Custom Link', url: 'https://example.com' }
       ]
-      mockStorage.read.mockReturnValue({ links: existingLinks })
+      mockUseStorage.load.mockResolvedValue({ links: existingLinks })
       const { initializeLinks, links } = useLinks()
       
-      // when: 执行初始化
-      initializeLinks()
+      // 执行初始化
+      await initializeLinks()
       
-      // then: 应该加载存储中的数据
+      // 应该加载存储中的数据
       expect(links.value).toEqual(existingLinks)
-      expect(mockStorage.write).not.toHaveBeenCalled()
+      expect(mockUseStorage.save).not.toHaveBeenCalled()
     })
 
-    it('应该在数据版本不兼容时重置为默认数据', () => {
-      // do: 模拟版本不兼容的数据（read返回null表示版本不兼容）
-      mockStorage.read.mockReturnValue(null)
+    it('应该在数据无效时重置为默认数据', async () => {
+      // 模拟无效数据
+      mockUseStorage.load.mockResolvedValue(null)
       const { initializeLinks, links } = useLinks()
       
-      // when: 执行初始化
-      initializeLinks()
+      // 执行初始化
+      await initializeLinks()
       
-      // then: 应该重置为默认数据
+      // 应该重置为默认数据
       expect(links.value).toEqual(DEFAULT_LINKS)
-      expect(mockStorage.write).toHaveBeenCalledWith({ links: DEFAULT_LINKS })
+      expect(mockUseStorage.save).toHaveBeenCalledWith({ links: DEFAULT_LINKS })
+    })
+
+    it('应该在存储中没有链接时加载默认链接', async () => {
+      // 模拟存储返回空的links数组
+      mockUseStorage.load.mockResolvedValue({ links: [] })
+      const { initializeLinks, links } = useLinks()
+      
+      // 执行初始化
+      await initializeLinks()
+      
+      // 应该加载默认链接数据
+      expect(links.value).toEqual(DEFAULT_LINKS)
+      expect(mockUseStorage.save).toHaveBeenCalledWith({ links: DEFAULT_LINKS })
     })
   })
 
   describe('添加链接', () => {
-    it('应该成功添加有效的链接', () => {
-      // do: 准备有效的链接数据
+    it('应该成功添加有效的链接', async () => {
+      // 准备有效的链接数据
       const newLinkData = { name: 'Test Link', url: 'https://test.com' }
       const { addLink, links } = useLinks()
       links.value = [] // 初始化为空数组
       
-      // when: 执行添加操作
-      const result = addLink(newLinkData)
+      // 执行添加操作
+      const result = await addLink(newLinkData)
       
-      // then: 应该成功添加并返回完整链接对象
+      // 应该成功添加并返回完整链接对象
       expect(result).toEqual({
         id: expect.any(String),
         name: 'Test Link',
         url: 'https://test.com'
       })
       expect(links.value).toHaveLength(1)
-      expect(mockStorage.write).toHaveBeenCalled()
+      expect(mockUseStorage.save).toHaveBeenCalled()
     })
 
-    it('应该在URL重复时抛出错误', () => {
-      // do: 准备重复的URL
+    it('应该在URL重复时抛出错误', async () => {
+      // 准备重复的URL
       const existingLink = { id: '1', name: 'Existing', url: 'https://test.com' }
       const duplicateData = { name: 'Duplicate', url: 'https://test.com' }
       const { addLink, links } = useLinks()
       links.value = [existingLink]
       
-      // when: 尝试添加重复URL的链接
-      const addDuplicate = () => addLink(duplicateData)
-      
-      // then: 应该抛出错误
-      expect(addDuplicate).toThrow('URL已存在')
+      // 尝试添加重复URL的链接
+      await expect(addLink(duplicateData)).rejects.toThrow('URL已存在')
       expect(links.value).toHaveLength(1) // 数量不变
     })
 
-    it('应该在验证失败时抛出错误', () => {
-      // do: 准备无效的链接数据
+    it('应该在验证失败时抛出错误', async () => {
+      // 准备无效的链接数据
       const invalidData = { name: '', url: 'invalid-url' }
       const { addLink } = useLinks()
       
-      // when: 尝试添加无效数据
-      const addInvalid = () => addLink(invalidData)
-      
-      // then: 应该抛出验证错误
-      expect(addInvalid).toThrow()
+      // 尝试添加无效数据
+      await expect(addLink(invalidData)).rejects.toThrow()
     })
   })
 
   describe('删除链接', () => {
-    it('应该成功删除存在的链接', () => {
-      // do: 准备包含链接的初始状态
+    it('应该成功删除存在的链接', async () => {
+      // 准备包含链接的初始状态
       const existingLinks = [
         { id: '1', name: 'Link 1', url: 'https://test1.com' },
         { id: '2', name: 'Link 2', url: 'https://test2.com' }
@@ -136,61 +147,58 @@ describe('useLinks', () => {
       const { removeLink, links } = useLinks()
       links.value = [...existingLinks]
       
-      // when: 删除指定ID的链接
-      const success = removeLink('1')
+      // 删除指定ID的链接
+      const success = await removeLink('1')
       
-      // then: 应该成功删除并更新存储
+      // 应该成功删除并更新存储
       expect(success).toBe(true)
       expect(links.value).toHaveLength(1)
       expect(links.value[0].id).toBe('2')
-      expect(mockStorage.write).toHaveBeenCalled()
+      expect(mockUseStorage.save).toHaveBeenCalled()
     })
 
-    it('应该在链接不存在时返回false', () => {
-      // do: 准备空的链接列表
+    it('应该在链接不存在时返回false', async () => {
+      // 准备空的链接列表
       const { removeLink, links } = useLinks()
       links.value = []
       
-      // when: 尝试删除不存在的链接
-      const success = removeLink('non-existent')
+      // 尝试删除不存在的链接
+      const success = await removeLink('non-existent')
       
-      // then: 应该返回false
+      // 应该返回false
       expect(success).toBe(false)
-      expect(mockStorage.write).not.toHaveBeenCalled()
+      expect(mockUseStorage.save).not.toHaveBeenCalled()
     })
   })
 
   describe('更新链接', () => {
-    it('应该成功更新存在的链接', () => {
-      // do: 准备现有链接和更新数据
+    it('应该成功更新存在的链接', async () => {
+      // 准备现有链接和更新数据
       const existingLink = { id: '1', name: 'Old Name', url: 'https://old.com' }
       const updates = { name: 'New Name', url: 'https://new.com' }
       const { updateLink, links } = useLinks()
       links.value = [existingLink]
       
-      // when: 执行更新操作
-      const result = updateLink('1', updates)
+      // 执行更新操作
+      const result = await updateLink('1', updates)
       
-      // then: 应该成功更新并返回新的链接对象
+      // 应该成功更新并返回新的链接对象
       expect(result).toEqual({
         id: '1',
         name: 'New Name',
         url: 'https://new.com'
       })
       expect(links.value[0]).toEqual(result)
-      expect(mockStorage.write).toHaveBeenCalled()
+      expect(mockUseStorage.save).toHaveBeenCalled()
     })
 
-    it('应该在链接不存在时抛出错误', () => {
-      // do: 准备空的链接列表
+    it('应该在链接不存在时抛出错误', async () => {
+      // 准备空的链接列表
       const { updateLink, links } = useLinks()
       links.value = []
       
-      // when: 尝试更新不存在的链接
-      const updateNonExistent = () => updateLink('non-existent', { name: 'New' })
-      
-      // then: 应该抛出错误
-      expect(updateNonExistent).toThrow('链接不存在')
+      // 尝试更新不存在的链接
+      await expect(updateLink('non-existent', { name: 'New' })).rejects.toThrow('链接不存在')
     })
   })
 

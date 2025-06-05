@@ -1,8 +1,8 @@
-# OneBoard 系统架构设计文档 v1.0
+# OneBoard 系统架构设计文档 v1.1
 
 ## 📋 文档信息
 - **项目名称**: OneBoard
-- **文档版本**: v1.0
+- **文档版本**: v1.1
 - **创建日期**: 2024-12-20
 - **更新日期**: 2024-12-20
 - **维护人员**: 项目团队
@@ -17,6 +17,7 @@
 - **业务领域**: 个人效率工具
 - **项目规模**: 中型项目
 - **开发周期**: 3-6个月（迭代开发）
+- **项目状态**: ✅ 已完成并部署上线
 
 ### 1.2 业务目标
 - **核心价值**: 提供简洁高效的个人工作台，帮助用户管理常用链接和待办任务
@@ -28,7 +29,7 @@
 
 ### 2.1 架构设计原则
 - **可扩展性**: 模块化设计，支持功能模块的快速扩展
-- **可维护性**: 组合式API + TypeScript，代码结构清晰
+- **可维护性**: 组合式API + JavaScript，代码结构清晰
 - **安全性**: 本地数据存储，无隐私泄露风险
 - **性能性**: Vite构建优化，组件懒加载，虚拟滚动
 - **可用性**: PWA支持，离线可用，零依赖部署
@@ -38,35 +39,38 @@
 ┌─────────────────────────────────────────────────────────────┐
 │                    前端应用层 (Vue 3)                        │
 ├─────────────────────────────────────────────────────────────┤
-│  UI组件层        │   业务逻辑层        │   数据存储层         │
-│  ────────────   │   ──────────────   │   ──────────────    │
-│  LinkPanel      │   useLinks.js      │   localStorage      │
-│  TaskList       │   useTasks.js      │   (版本化Schema)    │
-│  TaskForm       │   useStorage.js    │                     │
-│  @headlessui/vue│                    │                     │
+│  UI组件层             │   业务逻辑层        │   数据存储层     │
+│  ────────────────    │   ──────────────   │   ──────────    │
+│  LinkPanel           │   useLinks.js      │   localStorage  │
+│  ├─ LinkItem         │   useTasks.js      │   (版本化)      │
+│  └─ LinkForm         │   useStorage.js    │   Schema        │
+│  TaskList            │                    │                 │
+│  ├─ TaskItem         │   统一常量管理:     │                 │
+│  ├─ TaskForm         │   componentDefaults│                 │
+│  └─ TaskStats        │   defaultLinks     │                 │
 ├─────────────────────────────────────────────────────────────┤
 │                    构建与部署层                               │
-│  Vite + PWA + Service Worker + Static Hosting              │
+│  Vite 6 + PWA + Service Worker + Static Hosting           │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 - **架构模式**: 组件化SPA + 组合式API模式
-- **核心组件**: Vue 3、Vite、Tailwind CSS、HeadlessUI
+- **核心组件**: Vue 3、Vite、Tailwind CSS
 - **数据流向**: UI组件 → Composables → Storage → localStorage
 - **接口设计**: 组合式函数提供统一的业务接口
 
 ### 2.3 技术栈选择
 **前端技术**:
-- 框架: Vue 3.4+ (Composition API)
-- UI组件: @headlessui/vue (无障碍组件库)
+- 框架: Vue 3.5+ (Composition API)
+- UI框架: Tailwind CSS (无第三方组件库)
 - 状态管理: Composition API (轻量级状态管理)
-- 构建工具: Vite 5+ (快速构建)
+- 构建工具: Vite 6+ (快速构建)
 
-**后端技术**:
-- 编程语言: 无后端架构
-- 应用框架: 静态文件部署
-- 数据访问: localStorage API
-- 消息队列: 无需消息队列
+**开发工具**:
+- 编程语言: JavaScript (无TypeScript)
+- 代码规范: ESLint + 自定义规范
+- 测试框架: Vitest + Vue Test Utils
+- 版本控制: Git + GitHub
 
 **数据存储**:
 - 主数据库: localStorage (浏览器本地存储)
@@ -81,7 +85,7 @@
 
 ## 3. 系统设计
 
-### 3.1 目录结构设计
+### 3.1 实际目录结构
 ```
 OneBoard/
 ├── docs/                     # 📚 项目文档
