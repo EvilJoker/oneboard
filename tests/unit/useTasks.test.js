@@ -116,13 +116,12 @@ describe('useTasks Composable', () => {
     })
 
     it('test_update_task_success - 验证 updateTask 方法的更新功能', async () => {
-      // 先添加一个任务
-      const result = await addTask('原始任务', 'low')
+      const result = await addTask('原始任务内容', 'medium')
       const taskId = result.id
       const originalUpdatedAt = tasks.value[0].updatedAt
       
-      // 等待一毫秒确保时间戳不同
-      await new Promise(resolve => setTimeout(resolve, 1))
+      // 增加足够的延迟以确保时间戳不同
+      await new Promise(resolve => setTimeout(resolve, 50))
       
       const updateResult = await updateTask(taskId, { text: '更新的任务内容' })
       

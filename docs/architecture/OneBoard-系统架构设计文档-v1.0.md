@@ -1,11 +1,12 @@
-# OneBoard 系统架构设计文档 v1.1
+# OneBoard 系统架构设计文档 v1.2
 
 ## 📋 文档信息
 - **项目名称**: OneBoard
-- **文档版本**: v1.1
+- **文档版本**: v1.2
 - **创建日期**: 2024-12-20
 - **更新日期**: 2024-12-20
 - **维护人员**: 项目团队
+- **更新说明**: 修正实际目录结构，确保与代码实现一致性
 
 ---
 
@@ -13,17 +14,17 @@
 
 ### 1.1 项目介绍
 - **项目名称**: OneBoard
-- **项目描述**: 零后端依赖的个人仪表板，集成快捷链接管理和任务管理功能，支持PWA离线运行
+- **项目描述**: 零后端依赖的个人仪表板，集成快捷链接管理和任务管理功能，支持PWA离线运行和独立应用安装
 - **业务领域**: 个人效率工具
 - **项目规模**: 中型项目
 - **开发周期**: 3-6个月（迭代开发）
-- **项目状态**: ✅ 已完成并部署上线
+- **项目状态**: ✅ 已完成基础功能，🚧 PWA独立应用改造中
 
 ### 1.2 业务目标
-- **核心价值**: 提供简洁高效的个人工作台，帮助用户管理常用链接和待办任务
+- **核心价值**: 提供简洁高效的个人工作台，帮助用户管理常用链接和待办任务，支持桌面应用级别的用户体验
 - **目标用户**: 需要高效管理个人工作流的知识工作者
-- **主要功能**: 快捷链接管理、任务管理、数据本地存储、PWA离线支持
-- **预期成果**: 零配置即用的个人效率工具，支持完全离线运行
+- **主要功能**: 快捷链接管理、任务管理、数据本地存储、PWA离线支持、独立应用安装
+- **预期成果**: 零配置即用的个人效率工具，支持完全离线运行和桌面应用体验
 
 ## 2. 技术架构
 
@@ -31,33 +32,52 @@
 - **可扩展性**: 模块化设计，支持功能模块的快速扩展
 - **可维护性**: 组合式API + JavaScript，代码结构清晰
 - **安全性**: 本地数据存储，无隐私泄露风险
-- **性能性**: Vite构建优化，组件懒加载，虚拟滚动
-- **可用性**: PWA支持，离线可用，零依赖部署
+- **性能性**: Vite构建优化，组件懒加载，虚拟滚动，PWA缓存优化
+- **可用性**: PWA支持，离线可用，独立应用安装，零依赖部署
 
 ### 2.2 整体架构设计
 ```
+OneBoard PWA 系统架构 v1.2
 ┌─────────────────────────────────────────────────────────────┐
-│                    前端应用层 (Vue 3)                        │
+│                   PWA应用层 (PWA Shell)                      │
 ├─────────────────────────────────────────────────────────────┤
-│  UI组件层             │   业务逻辑层        │   数据存储层     │
-│  ────────────────    │   ──────────────   │   ──────────    │
-│  LinkPanel           │   useLinks.js      │   localStorage  │
-│  ├─ LinkItem         │   useTasks.js      │   (版本化)      │
-│  └─ LinkForm         │   useStorage.js    │   Schema        │
-│  TaskList            │                    │                 │
-│  ├─ TaskItem         │   统一常量管理:     │                 │
-│  ├─ TaskForm         │   componentDefaults│                 │
-│  └─ TaskStats        │   defaultLinks     │                 │
+│  前端应用层 (Vue 3)  │  PWA服务层 (Service Worker)          │
+│  ──────────────────  │  ─────────────────────────────────   │
+│  UI组件层:           │  缓存管理 (Workbox)                  │
+│  ├─ LinkPanel       │  ├─ 静态资源缓存 (precache)          │
+│  ├─ LinkItem        │  ├─ 运行时缓存 (runtime)             │
+│  ├─ LinkForm        │  └─ 离线回退 (offline fallback)      │
+│  ├─ TaskList        │                                      │
+│  ├─ TaskItem        │  网络检测 (Network Detection)        │
+│  ├─ TaskForm        │  ├─ 在线状态监听                     │
+│  ├─ TaskStats       │  ├─ 缓存策略切换                     │
+│  └─ 网络状态组件     │  └─ 离线提示管理                     │
+│                     │                                     │
+│  业务逻辑层:         │  PWA安装管理 (Install Management)    │
+│  ├─ useLinks.js     │  ├─ 安装提示控制                     │
+│  ├─ useTasks.js     │  ├─ 安装状态追踪                     │
+│  ├─ useStorage.js   │  └─ 更新检查机制                     │
+│  ├─ usePWA.js       │                                     │
+│  ├─ useNetworkStatus│                                     │
+│  └─ useServiceWorker│                                     │
 ├─────────────────────────────────────────────────────────────┤
-│                    构建与部署层                               │
-│  Vite 6 + PWA + Service Worker + Static Hosting           │
+│  数据存储层          │  PWA配置层                           │
+│  ──────────────────  │  ────────────────────────────────   │
+│  localStorage        │  Web App Manifest                   │
+│  ├─ quick-links     │  ├─ 应用元数据 (name, description)   │
+│  ├─ tasks           │  ├─ 图标资源 (multiple sizes)        │
+│  ├─ pwa-state       │  ├─ 显示配置 (standalone mode)       │
+│  └─ 版本化Schema     │  └─ 快捷方式 (shortcuts)             │
+├─────────────────────────────────────────────────────────────┤
+│              构建与部署层 (Vite + PWA)                        │
+│  Vite 6 + vite-plugin-pwa + Workbox + Static Hosting     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-- **架构模式**: 组件化SPA + 组合式API模式
-- **核心组件**: Vue 3、Vite、Tailwind CSS
-- **数据流向**: UI组件 → Composables → Storage → localStorage
-- **接口设计**: 组合式函数提供统一的业务接口
+- **架构模式**: PWA + 组件化SPA + 组合式API模式
+- **核心组件**: Vue 3、Vite、Tailwind CSS、Service Worker、Web App Manifest
+- **数据流向**: UI组件 → Composables → Storage → localStorage + Service Worker缓存
+- **接口设计**: 组合式函数提供统一的业务接口和PWA功能接口
 
 ### 2.3 技术栈选择
 **前端技术**:
@@ -65,6 +85,7 @@
 - UI框架: Tailwind CSS (无第三方组件库)
 - 状态管理: Composition API (轻量级状态管理)
 - 构建工具: Vite 6+ (快速构建)
+- PWA支持: vite-plugin-pwa + Workbox
 
 **开发工具**:
 - 编程语言: JavaScript (无TypeScript)
@@ -74,14 +95,14 @@
 
 **数据存储**:
 - 主数据库: localStorage (浏览器本地存储)
-- 缓存系统: 内存缓存 (computed属性)
+- 缓存系统: Service Worker缓存 + 内存缓存 (computed属性)
 - 文件存储: 无文件上传需求
 
 **部署运维**:
 - 容器化: 静态文件部署，无需容器
 - CI/CD: GitHub Actions 自动部署
-- 监控系统: 浏览器DevTools + Error Boundary
-- 云平台: Vercel/Netlify 静态托管
+- 监控系统: 浏览器DevTools + Error Boundary + Service Worker状态监控
+- 云平台: Vercel/Netlify 静态托管 (支持HTTPS和PWA)
 
 ## 3. 系统设计
 
@@ -97,18 +118,44 @@ OneBoard/
 ├── src/                     # 💻 源代码目录
 │   ├── components/          # Vue组件
 │   │   ├── links/          # 链接管理组件
-│   │   └── tasks/          # 任务管理组件
+│   │   │   ├── LinkPanel.vue
+│   │   │   ├── LinkItem.vue
+│   │   │   └── LinkForm.vue
+│   │   ├── tasks/          # 任务管理组件
+│   │   │   ├── TaskList.vue
+│   │   │   ├── TaskForm.vue
+│   │   │   ├── TaskItem.vue
+│   │   │   └── TaskStats.vue
+│   │   ├── NetworkStatus.vue     # 网络状态组件
+│   │   ├── PWAInstallPrompt.vue  # PWA安装提示组件
+│   │   └── HelloWorld.vue       # 示例组件
 │   ├── composables/        # 组合式函数
+│   │   ├── usePWA.js          # PWA核心功能管理
+│   │   ├── useNetworkStatus.js # 网络状态检测
+│   │   ├── useServiceWorker.js # Service Worker通信
+│   │   ├── useLinks.js        # 链接管理
+│   │   ├── useTasks.js        # 任务管理
+│   │   └── useStorage.js      # 存储管理
 │   ├── utils/              # 工具函数
-│   ├── types/              # TypeScript类型定义
+│   ├── types/              # 数据类型定义
+│   │   └── pwa.js         # PWA相关类型
 │   ├── constants/          # 常量配置
-│   └── assets/             # 静态资源
+│   ├── assets/             # 静态资源
+│   ├── App.vue            # 根组件
+│   ├── main.js            # 应用入口
+│   └── style.css          # 全局样式
 ├── tests/                   # 🧪 测试代码
 │   ├── unit/               # 单元测试
+│   │   ├── components/     # 组件测试
+│   │   └── composables/    # 组合式函数测试
 │   ├── integration/        # 集成测试
-│   └── e2e/                # E2E测试
+│   ├── e2e/                # E2E测试
+│   └── setup.js           # 测试配置
 ├── scripts/                 # 🔧 构建和部署脚本
 ├── config/                  # ⚙️ 配置文件
+├── vite.config.js          # Vite配置
+├── vitest.config.js        # 测试配置
+├── package.json            # 项目依赖
 └── README.md               # 项目说明文档
 ```
 

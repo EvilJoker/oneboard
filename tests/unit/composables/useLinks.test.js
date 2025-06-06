@@ -98,7 +98,7 @@ describe('useLinks', () => {
   describe('添加链接', () => {
     it('应该成功添加有效的链接', async () => {
       // 准备有效的链接数据
-      const newLinkData = { name: 'Test Link', url: 'https://test.com' }
+      const newLinkData = { name: 'Test Link', url: 'https://example.com' }
       const { addLink, links } = useLinks()
       links.value = [] // 初始化为空数组
       
@@ -109,7 +109,7 @@ describe('useLinks', () => {
       expect(result).toEqual({
         id: expect.any(String),
         name: 'Test Link',
-        url: 'https://test.com'
+        url: 'https://example.com'
       })
       expect(links.value).toHaveLength(1)
       expect(mockUseStorage.save).toHaveBeenCalled()
@@ -117,8 +117,8 @@ describe('useLinks', () => {
 
     it('应该在URL重复时抛出错误', async () => {
       // 准备重复的URL
-      const existingLink = { id: '1', name: 'Existing', url: 'https://test.com' }
-      const duplicateData = { name: 'Duplicate', url: 'https://test.com' }
+      const existingLink = { id: '1', name: 'Existing', url: 'https://example.com' }
+      const duplicateData = { name: 'Duplicate', url: 'https://example.com' }
       const { addLink, links } = useLinks()
       links.value = [existingLink]
       
@@ -174,8 +174,8 @@ describe('useLinks', () => {
   describe('更新链接', () => {
     it('应该成功更新存在的链接', async () => {
       // 准备现有链接和更新数据
-      const existingLink = { id: '1', name: 'Old Name', url: 'https://old.com' }
-      const updates = { name: 'New Name', url: 'https://new.com' }
+      const existingLink = { id: '1', name: 'Old Name', url: 'https://old.example.com' }
+      const updates = { name: 'New Name', url: 'https://new.example.com' }
       const { updateLink, links } = useLinks()
       links.value = [existingLink]
       
@@ -186,7 +186,7 @@ describe('useLinks', () => {
       expect(result).toEqual({
         id: '1',
         name: 'New Name',
-        url: 'https://new.com'
+        url: 'https://new.example.com'
       })
       expect(links.value[0]).toEqual(result)
       expect(mockUseStorage.save).toHaveBeenCalled()
@@ -205,7 +205,7 @@ describe('useLinks', () => {
   describe('链接验证', () => {
     it('应该验证有效的链接数据', () => {
       // do: 准备有效的链接数据
-      const validData = { name: 'Valid Link', url: 'https://valid.com' }
+      const validData = { name: 'Valid Link', url: 'https://valid.example.com' }
       const { validateLink } = useLinks()
       
       // when: 执行验证
